@@ -2,7 +2,7 @@
 #include "Adafruit_NeoPixel.h"
 
 Adafruit_NeoPixel pixels(NUMPIXELS, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
-extern u16_t uwSongNum; // 歌曲编号
+extern u16_t uwSongNum, uwSongBak; // 歌曲编号
 
 void Ws2812b_SetBrightness(u8 ubLight)
 {
@@ -119,7 +119,7 @@ void Ws2812b_ShowByHSV(void)
             return;
         }
         u32 rgbcolor = pixels.ColorHSV(i, 255, 255);
-        pixels.fill(rgbcolor, 0, 6);
+        pixels.fill(rgbcolor, 0, NUMPIXELS);
 #if PIXEL_SHOW_BY_FLAG
         gstRouteInfo.boLedShowFlag = TRUE;
 #else
@@ -141,7 +141,7 @@ void WS2812B_SolidLight(void)
     u32 uiColor[CONST_7] = {0xFF0000, 0xFFA000, 0xFFFF00, 0x008000, 0x00FFFF, 0x0000FF, 0x800080};
     static u8 ubIndex = 0;
 
-    pixels.fill(uiColor[ubIndex], 0, 6);
+    pixels.fill(uiColor[ubIndex], 0, NUMPIXELS);
 #if PIXEL_SHOW_BY_FLAG
     gstRouteInfo.boLedShowFlag = TRUE;
 #else
@@ -260,7 +260,7 @@ void WS2812B_Meteor(void)
             {
                 return;
             }
-            delay(10);
+            delay(5);
         }
     }
 
@@ -302,7 +302,7 @@ void WS2812B_Meteor(void)
             {
                 return;
             }
-            delay(10);
+            delay(5);
         }
     }
 
@@ -322,9 +322,6 @@ void WS2812B_Meteor(void)
 // ***********************************************************************
 void WS2812B_ShowUser(void)
 {
-    // pixels.fill(pixels.Color(10, 10, 10), 0, 6);
-
-
     static u16 uwHue = 0;
     uwHue += 500;
     if (uwHue >= 65535)
@@ -332,7 +329,7 @@ void WS2812B_ShowUser(void)
         uwHue = 0;
     }
     u32 rgbcolor = pixels.ColorHSV(uwHue, 255, 255);
-    pixels.fill(rgbcolor, 0, 6);
+    pixels.fill(rgbcolor, 0, NUMPIXELS);
 
 #if PIXEL_SHOW_BY_FLAG
     gstRouteInfo.boLedShowFlag = TRUE;
@@ -372,6 +369,11 @@ void Task_WS2812B(void *User_Task_WS2812B)
     Ws2812b_SetBrightness(255);
     while (1)
     {
+        if (uwSongBak != uwSongNum)
+        {
+            pixels.fill(0, 0, NUMPIXELS);
+        }
+        uwSongBak = uwSongNum; // 备份当前的歌曲编号
         if (0 == uwSongNum)
         {
             WS2812B_TurnOff(); // 关闭显示

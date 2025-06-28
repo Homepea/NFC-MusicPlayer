@@ -10,42 +10,39 @@
 MFRC522 mfrc522(SS_PIN, RST_PIN);
 
 #define FPSerial Serial1
-u16_t uwSongNum = 0; // 歌曲编号
+u16_t uwSongNum = 0, uwSongBak = 0; // 歌曲编号
 
 DFRobotDFPlayerMini myDFPlayer;
 void printDetail(uint8_t type, int value);
-
+int tmp = 0;
 void setup()
 {
-    Serial.begin(115200);
+    USBSerial.begin();
     SPI.begin(6, 5, 4, 3);
     mfrc522.PCD_Init();
-    Serial.println("Ready to read NTAG213...");
+    USBSerial.printf("Ready to read NTAG213...");
+
     FPSerial.begin(9600, SERIAL_8N1, /*rx =*/8, /*tx =*/9);
 
-    if (!myDFPlayer.begin(FPSerial, /*isACK = */ true, /*doReset = */ true))
+    while (!myDFPlayer.begin(FPSerial, /*isACK = */ true, /*doReset = */ true))
     { // Use serial to communicate with mp3.
-        Serial.println(F("Unable to begin:"));
-        Serial.println(F("1.Please recheck the connection!"));
-        Serial.println(F("2.Please insert the SD card!"));
-        while (true)
-        {
-            delay(0); // Code to compatible with ESP8266 watch dog.
-        }
+        USBSerial.printf("Mp3 unable to begin:");
+        USBSerial.printf("1.Please recheck the connection!");
+        USBSerial.printf("2.Please insert the SD card!\r\n");
     }
-    Serial.println(F("DFPlayer Mini online."));
+    USBSerial.printf("DFPlayer Mini online.\r\n");
 
     myDFPlayer.volume(20); // Set volume value. From 0 to 30
-    // myDFPlayer.play(1);    // Play the first mp3
+    // myDFPlayer.playMp3Folder (1);    // Play the first mp3
 
     xTaskCreatePinnedToCore(
-        Task_WS2812B,    // 任务函数
-        "LED Task", // 任务名称
-        4096,       // 堆栈大小
-        NULL,       // 参数
-        1,          // 优先级
-        NULL,       // 任务句柄
-        1           // 核心编号
+        Task_WS2812B, // 任务函数
+        "LED Task",   // 任务名称
+        4096,         // 堆栈大小
+        NULL,         // 参数
+        1,            // 优先级
+        NULL,         // 任务句柄
+        1             // 核心编号
     );
 }
 
@@ -58,13 +55,12 @@ void loop()
     }
 
     // 显示UID
-    Serial.print("UID : ");
+    USBSerial.printf("UID : ");
     for (byte i = 0; i < mfrc522.uid.size; i++)
     {
-        Serial.print(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
-        Serial.print(mfrc522.uid.uidByte[i], HEX);
+        USBSerial.printf("0x2%x ", mfrc522.uid.uidByte[i]); // mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
     }
-    Serial.println();
+    USBSerial.println();
 
     // NTAG213专用读取流程（关键修复部分）
     byte pagesToRead = 24; // 从页4开始读取
@@ -81,9 +77,7 @@ void loop()
 
         if (status != MFRC522::STATUS_OK)
         {
-            Serial.print("Page 0x");
-            Serial.print(page, HEX);
-            Serial.println(" read failed");
+            // USBSerial.printf("Page 0x%2x read failed\r\n", page);
             success = false;
             break;
         }
@@ -98,22 +92,19 @@ void loop()
         }
     }
 
-
     // 安全解析数据
     if (success && tagData.length() > 0)
     {
-        // Serial.printf(" Raw Data: %s, len: %d\r\n", tagData.c_str(), tagData.length());
-
         for (uint8_t i = 14; i < tagData.length() - 1; i++)
         {
             numdat += tagData[i];
         }
         uwSongNum = atoi(numdat.c_str());
-        Serial.printf("Song num: %d\r\n", uwSongNum);
+        USBSerial.printf("Song num: %d\r\n", uwSongNum);
     }
     if (uwSongNum)
     {
-        myDFPlayer.play(uwSongNum); // 播放歌曲
+        myDFPlayer.playMp3Folder (uwSongNum); // 播放歌曲
     }
     else
     {

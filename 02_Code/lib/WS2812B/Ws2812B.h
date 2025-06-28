@@ -4,7 +4,7 @@
 #include "Common.h"
 
 #define         NEOPIXEL_PIN                10
-#define         NUMPIXELS                   5
+#define         NUMPIXELS                   19
 #define         PIXEL_SHOW_BY_FLAG          0
 
 #define        EM_LIGHT_TURN_OFF            0x00
