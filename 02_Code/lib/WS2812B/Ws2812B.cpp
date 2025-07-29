@@ -3,6 +3,7 @@
 
 Adafruit_NeoPixel pixels(NUMPIXELS, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
 extern u16_t uwSongNum, uwSongBak; // 歌曲编号
+extern int gboVolUpFlag, gboVolDownFlag;
 
 void Ws2812b_SetBrightness(u8 ubLight)
 {
@@ -85,7 +86,7 @@ void Ws2812b_Rainbow(void)
     for (j = 0; j < 256 * 5; j++)
     {
         if (EM_LIGHT_RAINBOW != ((uwSongNum % 6) + 1) // 不是当前模式则直接退出
-            || !uwSongNum)                                  // 如果是不显示也直接退出
+            || !uwSongNum)                            // 如果是不显示也直接退出
         {
             return;
         }
@@ -114,7 +115,7 @@ void Ws2812b_ShowByHSV(void)
     for (int i = 0; i < 65535; i += 100)
     {
         if (EM_LIGHT_SHOW_HSV != ((uwSongNum % 6) + 1) // 不是当前模式则直接退出
-            || !uwSongNum)                                   // 如果是不显示也直接退出
+            || !uwSongNum)                             // 如果是不显示也直接退出
         {
             return;
         }
@@ -151,7 +152,7 @@ void WS2812B_SolidLight(void)
     for (u8 i = 0; i < 30; i++) // 用多次循环可以快速退出
     {
         if (EM_LIGHT_SOLID != ((uwSongNum % 6) + 1) // 不是当前模式则直接退出
-            || !uwSongNum)                                // 如果是不显示也直接退出
+            || !uwSongNum)                          // 如果是不显示也直接退出
         {
             return;
         }
@@ -189,7 +190,7 @@ void WS2812B_WaterLight(void)
         for (u8 j = 0; j < CONST_10; j++) // 用多次循环可以快速退出
         {
             if (EM_LIGHT_WATER != ((uwSongNum % 6) + 1) // 不是当前模式则直接退出
-                || !uwSongNum)                                // 如果是不显示也直接退出
+                || !uwSongNum)                          // 如果是不显示也直接退出
             {
                 return;
             }
@@ -256,7 +257,7 @@ void WS2812B_Meteor(void)
         for (u8 i = 0; i < 10; i++) // 用多次循环可以快速退出
         {
             if (EM_LIGHT_METEOT != ((uwSongNum % 6) + 1) // 不是当前模式则直接退出
-                || !uwSongNum)                                 // 如果是不显示也直接退出
+                || !uwSongNum)                           // 如果是不显示也直接退出
             {
                 return;
             }
@@ -298,7 +299,7 @@ void WS2812B_Meteor(void)
         for (u8 i = 0; i < 10; i++) // 用多次循环可以快速退出
         {
             if (EM_LIGHT_METEOT != ((uwSongNum % 6) + 1) // 不是当前模式则直接退出
-                || !uwSongNum)                                 // 如果是不显示也直接退出
+                || !uwSongNum)                           // 如果是不显示也直接退出
             {
                 return;
             }
@@ -371,12 +372,37 @@ void Task_WS2812B(void *User_Task_WS2812B)
     {
         if (uwSongBak != uwSongNum)
         {
-            pixels.fill(0, 0, NUMPIXELS);
+            pixels.clear();
+            pixels.show();
         }
         uwSongBak = uwSongNum; // 备份当前的歌曲编号
+
         if (0 == uwSongNum)
         {
-            WS2812B_TurnOff(); // 关闭显示
+            if (gboVolUpFlag)
+            {
+                u32 uiColor = (1 == gboVolUpFlag) ? 0xFF0000 : 0xFF00AA;
+                for (u16 i = 0; i < pixels.numPixels(); i++)
+                {
+                    pixels.setPixelColor(i, uiColor);
+                    pixels.show();
+                    delay(30);
+                }
+                gboVolUpFlag = FALSE;
+            }
+            else if (gboVolDownFlag)
+            {
+                u32 uiColor = (1 == gboVolDownFlag) ? 0x00FF00 : 0x00FFAA;
+                for (u16 i = 0; i < pixels.numPixels(); i++)
+                {
+                    pixels.setPixelColor(i, uiColor);
+                    pixels.show();
+                    delay(30);
+                }
+                gboVolDownFlag = FALSE;
+            }
+            pixels.clear();
+            pixels.show();
         }
         else
         {
