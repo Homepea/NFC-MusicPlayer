@@ -22,7 +22,7 @@ int tmp = 0, gboVolUpFlag = 0, gboVolDownFlag = 0;
 unsigned long startTime;
 bool functionExecuted = false;
 
-int gubVol = 20; // 音量
+int gubVol = 20, VOL_CHANGE_INT = 4; // 音量
 
 void Task_NFC(void *User_Task_NFC)
 {
@@ -82,9 +82,9 @@ void Task_NFC(void *User_Task_NFC)
             }
             if ('+' == tagData[14]) // 音量增加
             {
-                if (gubVol < 30)
+                if (gubVol + VOL_CHANGE_INT < 30)
                 {
-                    gubVol++;
+                    gubVol += VOL_CHANGE_INT;
                     myDFPlayer.volume(gubVol);
                     USBSerial.printf("Vol: %d\r\n", gubVol);
                     preferences.putInt("volume", gubVol);
@@ -93,15 +93,19 @@ void Task_NFC(void *User_Task_NFC)
                 }
                 else
                 {
+                    gubVol = 30;
+                    myDFPlayer.volume(gubVol);
+                    USBSerial.printf("Vol: %d\r\n", gubVol);
+                    preferences.putInt("volume", gubVol);
                     gboVolDownFlag = 0;
                     gboVolUpFlag = 2;
                 }
             }
             else if ('-' == tagData[14]) // 音量减小
             {
-                if (gubVol > 0)
+                if (gubVol > VOL_CHANGE_INT)
                 {
-                    gubVol--;
+                    gubVol -= VOL_CHANGE_INT;
                     gboVolUpFlag = 0;
                     gboVolDownFlag = 1;
                     myDFPlayer.volume(gubVol);
@@ -110,6 +114,10 @@ void Task_NFC(void *User_Task_NFC)
                 }
                 else
                 {
+                    gubVol = 2;
+                    myDFPlayer.volume(gubVol);
+                    USBSerial.printf("Vol: %d\r\n", gubVol);
+                    preferences.putInt("volume", gubVol);
                     gboVolUpFlag = 0;
                     gboVolDownFlag = 2;
                 }
