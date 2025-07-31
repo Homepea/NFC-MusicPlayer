@@ -85,7 +85,7 @@ void Ws2812b_Rainbow(void)
 
     for (j = 0; j < 256 * 5; j++)
     {
-        if (EM_LIGHT_RAINBOW != ((uwSongNum % 6) + 1) // 不是当前模式则直接退出
+        if (EM_LIGHT_SOLID != ((uwSongNum % 6) + 1) // 不是当前模式则直接退出
             || !uwSongNum)                            // 如果是不显示也直接退出
         {
             return;
@@ -139,30 +139,22 @@ void Ws2812b_ShowByHSV(void)
 // ***********************************************************************
 void WS2812B_SolidLight(void)
 {
-    u32 uiColor[CONST_7] = {0xFF0000, 0xFFA000, 0xFFFF00, 0x008000, 0x00FFFF, 0x0000FF, 0x800080};
-    static u8 ubIndex = 0;
-
-    pixels.fill(uiColor[ubIndex], 0, NUMPIXELS);
-#if PIXEL_SHOW_BY_FLAG
-    gstRouteInfo.boLedShowFlag = TRUE;
-#else
-    pixels.show();
-#endif
-
-    for (u8 i = 0; i < 30; i++) // 用多次循环可以快速退出
+    for (int i = 0; i < 65535; i += 2000)
     {
-        if (EM_LIGHT_SOLID != ((uwSongNum % 6) + 1) // 不是当前模式则直接退出
-            || !uwSongNum)                          // 如果是不显示也直接退出
+        if (EM_LIGHT_RAINBOW != ((uwSongNum % 6) + 1) // 不是当前模式则直接退出
+            || !uwSongNum)                             // 如果是不显示也直接退出
         {
             return;
         }
-        delay(10);
-    }
-
-    ubIndex++;
-    if (ubIndex >= CONST_7)
-    {
-        ubIndex = 0;
+        // USBSerial.printf("Hue: %d\r\n", i);
+        u32 rgbcolor = pixels.ColorHSV(i, 255, 255);
+        pixels.fill(rgbcolor, 0, NUMPIXELS);
+#if PIXEL_SHOW_BY_FLAG
+        gstRouteInfo.boLedShowFlag = TRUE;
+#else
+        pixels.show();
+#endif
+        delay(18);
     }
 }
 
@@ -406,10 +398,13 @@ void Task_WS2812B(void *User_Task_WS2812B)
         }
         else
         {
-            switch ((uwSongNum % 6) + 1)
+            u8 tmp = (uwSongNum % 6) + 1;
+            // USBSerial.printf("Light: %d\r\n", tmp);
+            switch (tmp)
             {
             case EM_LIGHT_RAINBOW:
-                Ws2812b_Rainbow(); // 彩虹特效
+                // Ws2812b_Rainbow(); // 彩虹特效
+                WS2812B_SolidLight(); // 流水灯1
                 break;
 
             case EM_LIGHT_SHOW_HSV:
@@ -417,7 +412,8 @@ void Task_WS2812B(void *User_Task_WS2812B)
                 break;
 
             case EM_LIGHT_SOLID:
-                WS2812B_SolidLight(); // 流水灯1
+                // WS2812B_SolidLight(); // 流水灯1
+                Ws2812b_Rainbow(); // 彩虹特效
                 break;
 
             case EM_LIGHT_WATER:
